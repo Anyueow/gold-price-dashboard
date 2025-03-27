@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from data.fetcher import GoldDataFetcher
+from fetcher import GoldDataFetcher
 from models.predictor import GoldPricePredictor
 from visualization.plots import GoldVisualizer
 from sentiment.sentiment_analysis import SentimentAnalyzer, format_sentiment_for_dashboard

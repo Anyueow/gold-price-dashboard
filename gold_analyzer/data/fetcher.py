@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import os
 from typing import Optional, Dict, Any
+import time
 
 class GoldDataFetcher:
     """Class to handle gold price data fetching from various sources."""
@@ -12,6 +13,16 @@ class GoldDataFetcher:
         self.gold_tickers = ["GLD", "IAU", "GC=F"]
         self.cache_dir = os.path.join(os.path.dirname(__file__), "cache")
         os.makedirs(self.cache_dir, exist_ok=True)
+        self.last_api_call = 0
+        self.api_delay = 1  # Delay between API calls in seconds
+    
+    def _wait_for_rate_limit(self):
+        """Implement rate limiting for API calls."""
+        current_time = time.time()
+        time_since_last_call = current_time - self.last_api_call
+        if time_since_last_call < self.api_delay:
+            time.sleep(self.api_delay - time_since_last_call)
+        self.last_api_call = time.time()
     
     def fetch_live_data(self, days: int = 365) -> Optional[pd.DataFrame]:
         """
@@ -25,6 +36,7 @@ class GoldDataFetcher:
         """
         for ticker in self.gold_tickers:
             try:
+                self._wait_for_rate_limit()
                 data = yf.download(
                     ticker,
                     start=(datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d'),
@@ -40,7 +52,7 @@ class GoldDataFetcher:
     
     def generate_sample_data(self, days: int = 365) -> pd.DataFrame:
         """
-        Generate sample gold price data for testing.
+        Generate realistic sample gold price data for testing.
         
         Args:
             days: Number of days of sample data to generate
@@ -48,18 +60,40 @@ class GoldDataFetcher:
         Returns:
             DataFrame with sample gold price data
         """
+        # Generate dates
         dates = pd.date_range(
             start=datetime.now() - timedelta(days=days),
             end=datetime.now(),
             freq='D'
         )
         
+        # Generate base price with trend and seasonality
+        base_price = 1800
+        trend = np.linspace(0, 100, len(dates))
+        seasonality = 50 * np.sin(np.linspace(0, 4*np.pi, len(dates)))
+        
+        # Generate prices with realistic volatility
+        prices = base_price + trend + seasonality + np.random.normal(0, 20, len(dates))
+        
+        # Ensure prices are positive and maintain realistic relationships
+        prices = np.maximum(prices, 1000)
+        
+        # Generate other price components
+        open_prices = prices + np.random.normal(0, 5, len(dates))
+        high_prices = np.maximum(open_prices, prices) + np.random.uniform(0, 10, len(dates))
+        low_prices = np.minimum(open_prices, prices) - np.random.uniform(0, 10, len(dates))
+        
+        # Generate volume with some correlation to price changes
+        price_changes = np.abs(prices[1:] - prices[:-1])
+        volume = np.random.normal(1000000, 100000, len(dates))
+        volume[1:] += price_changes * 1000  # Higher volume on price changes
+        
         return pd.DataFrame({
-            'Open': np.random.normal(1800, 50, len(dates)),
-            'High': np.random.normal(1820, 50, len(dates)),
-            'Low': np.random.normal(1780, 50, len(dates)),
-            'Close': np.random.normal(1800, 50, len(dates)),
-            'Volume': np.random.normal(1000000, 100000, len(dates))
+            'Open': open_prices,
+            'High': high_prices,
+            'Low': low_prices,
+            'Close': prices,
+            'Volume': volume
         }, index=dates)
     
     def get_data(self, days: int = 365, use_cache: bool = True) -> pd.DataFrame:
@@ -79,6 +113,7 @@ class GoldDataFetcher:
             return data
             
         # If live data fails, generate sample data
+        print("Using sample data due to API limitations")
         return self.generate_sample_data(days)
     
     def get_technical_indicators(self, data: pd.DataFrame) -> Dict[str, pd.Series]:

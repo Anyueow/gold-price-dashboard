@@ -2,56 +2,60 @@ import requests
 from datetime import datetime
 from typing import Dict
 import numpy as np
+from openai import OpenAI
 
 class SentimentAnalyzer:
-    def __init__(self, grok_api_key: str):
-        self.grok_api_key = grok_api_key
-        self.base_url = "https://api.grok.ai/v1"
+    def __init__(self, xai_api_key: str):
+        self.client = OpenAI(
+            api_key=xai_api_key,
+            base_url="https://api.x.ai/v1",
+        )
 
-    def get_grok_sentiment(self, query: str) -> Dict:
-        """Get sentiment analysis from Grok API"""
+    def get_sentiment(self, query: str) -> Dict:
+        """Get sentiment analysis using Grok model"""
         try:
-            # Construct the prompt for Grok
+            # Construct the prompt
             prompt = f"""
             Analyze the sentiment of the following gold market related text:
             "{query}"
             
-            Provide a detailed analysis including:
-            1. Overall sentiment (positive/negative/neutral)
-            2. Confidence score (0-1)
-            3. Key sentiment indicators
-            4. Market impact assessment
-            5. Price trend prediction (up/down/stable)
-            6. Key factors influencing sentiment
+            Provide a JSON response with:
+            1. sentiment: overall sentiment (positive/negative/neutral)
+            2. confidence_score: confidence score (0-1)
+            3. key_indicators: list of key sentiment indicators
+            4. market_impact: assessment of market impact (high/medium/low)
+            5. price_trend: price trend prediction (up/down/stable)
+            6. factors: key factors influencing sentiment
             """
             
             # Make API call to Grok
-            headers = {
-                "Authorization": f"Bearer {self.grok_api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            response = requests.post(
-                f"{self.base_url}/analyze",
-                headers=headers,
-                json={"prompt": prompt}
+            response = self.client.chat.completions.create(
+                model="grok-2-latest",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a financial sentiment analysis expert specializing in gold market analysis."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
             )
             
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"error": f"Grok API error: {response.status_code}"}
+            # Extract the response content
+            return response.choices[0].message.content
                 
         except Exception as e:
-            return {"error": f"Error in Grok sentiment analysis: {str(e)}"}
+            return {"error": f"Error in sentiment analysis: {str(e)}"}
 
-    def calculate_sentiment_score(self, grok_data: Dict) -> Dict:
-        """Calculate sentiment score from Grok analysis"""
+    def calculate_sentiment_score(self, sentiment_data: Dict) -> Dict:
+        """Calculate sentiment score from analysis"""
         try:
             # Extract sentiment components
-            sentiment = grok_data.get("sentiment", "neutral")
-            confidence = float(grok_data.get("confidence_score", 0))
-            price_trend = grok_data.get("price_trend", "stable")
+            sentiment = sentiment_data.get("sentiment", "neutral")
+            confidence = float(sentiment_data.get("confidence_score", 0))
+            price_trend = sentiment_data.get("price_trend", "stable")
             
             # Convert sentiment to numerical score
             sentiment_map = {
@@ -83,8 +87,7 @@ class SentimentAnalyzer:
                 "sentiment_strength": abs(final_score),
                 "sentiment_direction": "positive" if final_score > 0 else "negative",
                 "confidence_level": confidence,
-                "market_impact": "High" if abs(final_score) > 0.7 else 
-                               "Medium" if abs(final_score) > 0.4 else "Low"
+                "market_impact": sentiment_data.get("market_impact", "Low")
             }
             
         except Exception as e:
@@ -93,24 +96,24 @@ class SentimentAnalyzer:
     def generate_sentiment_report(self, query: str) -> Dict:
         """Generate comprehensive sentiment report"""
         try:
-            # Get sentiment from Grok
-            grok_sentiment = self.get_grok_sentiment(query)
+            # Get sentiment analysis
+            sentiment_data = self.get_sentiment(query)
             
             # Calculate sentiment score
-            sentiment_score = self.calculate_sentiment_score(grok_sentiment)
+            sentiment_score = self.calculate_sentiment_score(sentiment_data)
             
             # Generate report
             report = {
                 "timestamp": datetime.now().isoformat(),
                 "query": query,
                 "aggregate_sentiment": sentiment_score,
-                "grok_analysis": grok_sentiment,
+                "analysis": sentiment_data,
                 "summary": {
                     "overall_sentiment": sentiment_score["sentiment_direction"],
                     "confidence": f"{sentiment_score['confidence_level']:.2%}",
                     "strength": f"{sentiment_score['sentiment_strength']:.2f}",
                     "market_impact": sentiment_score["market_impact"],
-                    "price_trend": grok_sentiment.get("price_trend", "stable").capitalize()
+                    "price_trend": sentiment_data.get("price_trend", "stable").capitalize()
                 }
             }
             

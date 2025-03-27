@@ -73,16 +73,19 @@ if user_type == "Trader":
         col1, col2 = st.columns(2)
         
         with col1:
+            current_price = float(st.session_state.gold_data['Close'].iloc[-1])
+            price_change = float(st.session_state.gold_data['Close'].pct_change().iloc[-1])
             st.metric(
                 label="Current Gold Price",
-                value=f"${st.session_state.gold_data['Close'].iloc[-1]:.2f}",
-                delta=f"{st.session_state.gold_data['Close'].pct_change().iloc[-1]:.2%}"
+                value=f"${current_price:.2f}",
+                delta=f"{price_change:.2%}"
             )
         
         with col2:
+            volatility = float(st.session_state.gold_data['Close'].pct_change().std() * 14 ** 0.5)
             st.metric(
                 label="14-Day Volatility",
-                value=f"{st.session_state.gold_data['Close'].pct_change().std() * 14 ** 0.5:.2%}",
+                value=f"{volatility:.2%}",
                 delta=None
             )
         
@@ -102,7 +105,7 @@ if user_type == "Trader":
             if predictions is not None:
                 metrics = st.session_state.predictor.calculate_prediction_metrics(
                     predictions,
-                    st.session_state.gold_data['Close'].iloc[-1]
+                    float(st.session_state.gold_data['Close'].iloc[-1])
                 )
                 
                 st.markdown("### Price Prediction Metrics")
@@ -166,15 +169,20 @@ else:  # Consumer View
             col1, col2, col3 = st.columns(3)
             
             with col1:
+                current_price = float(st.session_state.gold_data['Close'].iloc[-1])
+                price_30_days_ago = float(st.session_state.gold_data['Close'].iloc[-30])
+                trend_30 = (current_price - price_30_days_ago) / price_30_days_ago
                 st.metric(
                     label="30-Day Trend",
-                    value=f"{((st.session_state.gold_data['Close'].iloc[-1] - st.session_state.gold_data['Close'].iloc[-30]) / st.session_state.gold_data['Close'].iloc[-30]):.2%}"
+                    value=f"{trend_30:.2%}"
                 )
             
             with col2:
+                price_90_days_ago = float(st.session_state.gold_data['Close'].iloc[-90])
+                trend_90 = (current_price - price_90_days_ago) / price_90_days_ago
                 st.metric(
                     label="90-Day Trend",
-                    value=f"{((st.session_state.gold_data['Close'].iloc[-1] - st.session_state.gold_data['Close'].iloc[-90]) / st.session_state.gold_data['Close'].iloc[-90]):.2%}"
+                    value=f"{trend_90:.2%}"
                 )
             
             with col3:
@@ -193,20 +201,21 @@ else:  # Consumer View
             col1, col2 = st.columns(2)
             
             with col1:
+                price_per_gram = float(st.session_state.gold_data['Close'].iloc[-1]) / 31.1035
                 st.metric(
                     label="Current Price per Gram",
-                    value=f"${st.session_state.gold_data['Close'].iloc[-1] / 31.1035:.2f}"
+                    value=f"${price_per_gram:.2f}"
                 )
             
             with col2:
                 st.metric(
                     label="Price per Ounce",
-                    value=f"${st.session_state.gold_data['Close'].iloc[-1]:.2f}"
+                    value=f"${current_price:.2f}"
                 )
             
             # Get buying recommendation
-            current_price = st.session_state.gold_data['Close'].iloc[-1]
-            ma_30 = st.session_state.gold_data['Close'].rolling(window=30).mean().iloc[-1]
+            current_price = float(st.session_state.gold_data['Close'].iloc[-1])
+            ma_30 = float(st.session_state.gold_data['Close'].rolling(window=30).mean().iloc[-1])
             recommendation = st.session_state.predictor.get_buying_recommendation(current_price, ma_30)
             
             st.markdown("#### Buying Recommendations")

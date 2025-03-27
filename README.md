@@ -1,26 +1,24 @@
-# Gold Price Prediction Dashboard
+# Gold Price Analyzer
 
-A comprehensive dashboard for analyzing and predicting gold prices, featuring both technical analysis and sentiment analysis capabilities.
+A Streamlit application for analyzing gold prices using machine learning and technical indicators.
 
 ## Features
 
-- Real-time gold price data fetching from multiple sources
-- Technical analysis indicators (RSI, Moving Averages, Volatility)
-- Price predictions using statistical models
-- Sentiment analysis using Grok API
-- Interactive visualizations using Plotly
-- Separate views for traders and consumers
-- Price alerts and buying recommendations
+- Real-time gold price data fetching from Alpha Vantage
+- Technical indicators (RSI, Moving Averages)
+- LSTM-based price prediction
+- Interactive visualizations
+- Model training and saving capabilities
 
-## Installation
+## Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/gold-price-dashboard.git
-cd gold-price-dashboard
+git clone <repository-url>
+cd gold-analyzer
 ```
 
-2. Create and activate a virtual environment:
+2. Create a virtual environment and activate it:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -31,60 +29,69 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the root directory with your Grok API key:
+4. Set up Streamlit secrets:
+Create a `.streamlit/secrets.toml` file with your Alpha Vantage API key:
+```toml
+ALPHA_VANTAGE_API_KEY = "your-api-key-here"
 ```
-GROK_API_KEY=your_api_key_here
+
+## Running the Application
+
+1. Start the Streamlit app:
+```bash
+streamlit run app.py
 ```
+
+2. Open your browser and navigate to the URL shown in the terminal (typically http://localhost:8501)
 
 ## Usage
 
-Run the dashboard:
-```bash
-streamlit run gold_dashboard.py
-```
+1. **Data Settings**
+   - Choose the number of days to analyze
+   - Toggle between live and sample data
+
+2. **Model Settings**
+   - Adjust sequence length, hidden size, and number of layers
+   - Configure dropout rate
+
+3. **Training Settings**
+   - Set number of epochs, batch size, and learning rate
+   - Click "Train Model" to start training
+
+4. **Visualization**
+   - View price data and technical indicators
+   - Compare actual vs predicted prices
+   - Analyze model performance metrics
 
 ## Project Structure
 
 ```
-gold-price-dashboard/
+gold-analyzer/
+├── app.py
 ├── gold_analyzer/
 │   ├── data/
-│   │   ├── __init__.py
 │   │   └── fetcher.py
 │   ├── models/
-│   │   ├── __init__.py
-│   │   └── predictor.py
-│   ├── visualization/
-│   │   ├── __init__.py
-│   │   └── plots.py
-│   └── __init__.py
-├── sentiment/
-│   ├── __init__.py
-│   └── sentiment_analysis.py
-├── gold_dashboard.py
+│   │   └── lstm.py
+│   └── utils/
+│       ├── preprocessing.py
+│       └── visualization.py
+├── models/
 ├── requirements.txt
-├── .env
 └── README.md
 ```
 
 ## Dependencies
 
-- streamlit==1.32.0
-- pandas==2.2.0
-- numpy==1.26.3
-- plotly==5.18.0
-- yfinance==0.2.36
-- requests==2.31.0
-- python-dotenv==1.0.0
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+- Python 3.8+
+- PyTorch
+- Streamlit
+- Pandas
+- NumPy
+- Plotly
+- scikit-learn
+- Alpha Vantage API
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+MIT License 

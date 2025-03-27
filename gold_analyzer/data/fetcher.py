@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import os
 from typing import Optional, Dict, Any
 import time
-from dotenv import load_dotenv
+import streamlit as st
 
 class GoldDataFetcher:
     """Class to handle gold price data fetching from Alpha Vantage."""
@@ -16,10 +16,11 @@ class GoldDataFetcher:
         os.makedirs(self.cache_dir, exist_ok=True)
         self.last_api_call = 0
         self.api_delay = 12  # Alpha Vantage free tier: 5 calls/minute
-        load_dotenv()
-        self.api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+        
+        # Get API key from Streamlit secrets
+        self.api_key = st.secrets["ALPHA_VANTAGE_API_KEY"]
         if not self.api_key:
-            raise ValueError("ALPHA_VANTAGE_API_KEY not found in environment variables")
+            raise ValueError("ALPHA_VANTAGE_API_KEY not found in Streamlit secrets")
         self.ts = TimeSeries(key=self.api_key, output_format='pandas')
     
     def _wait_for_rate_limit(self):

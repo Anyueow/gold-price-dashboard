@@ -45,7 +45,7 @@ st.markdown("---")
 if 'gold_data' not in st.session_state:
     st.session_state.gold_data = None
 if 'sentiment_analyzer' not in st.session_state:
-    st.session_state.sentiment_analyzer = SentimentAnalyzer(grok_api_key=os.getenv('GROK_API_KEY'))
+    st.session_state.sentiment_analyzer = SentimentAnalyzer(xai_api_key=os.getenv('XAI_API_KEY'))
 if 'data_fetcher' not in st.session_state:
     st.session_state.data_fetcher = GoldDataFetcher()
 if 'predictor' not in st.session_state:

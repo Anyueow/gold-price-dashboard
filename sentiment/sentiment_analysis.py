@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict
 import numpy as np
 from openai import OpenAI
+import json
 
 class SentimentAnalyzer:
     def __init__(self, xai_api_key: str):
@@ -26,6 +27,8 @@ class SentimentAnalyzer:
             4. market_impact: assessment of market impact (high/medium/low)
             5. price_trend: price trend prediction (up/down/stable)
             6. factors: key factors influencing sentiment
+            
+            Format your response as a valid JSON object.
             """
             
             # Make API call to Grok
@@ -34,7 +37,7 @@ class SentimentAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a financial sentiment analysis expert specializing in gold market analysis."
+                        "content": "You are a financial sentiment analysis expert specializing in gold market analysis. Always respond with valid JSON."
                     },
                     {
                         "role": "user",
@@ -43,8 +46,21 @@ class SentimentAnalyzer:
                 ]
             )
             
-            # Extract the response content
-            return response.choices[0].message.content
+            # Extract and parse the response content
+            content = response.choices[0].message.content
+            try:
+                # Try to parse the content as JSON
+                return json.loads(content)
+            except json.JSONDecodeError:
+                # If parsing fails, return a default structure
+                return {
+                    "sentiment": "neutral",
+                    "confidence_score": 0.5,
+                    "key_indicators": ["market uncertainty"],
+                    "market_impact": "medium",
+                    "price_trend": "stable",
+                    "factors": ["general market conditions"]
+                }
                 
         except Exception as e:
             return {"error": f"Error in sentiment analysis: {str(e)}"}
@@ -98,6 +114,9 @@ class SentimentAnalyzer:
         try:
             # Get sentiment analysis
             sentiment_data = self.get_sentiment(query)
+            
+            if "error" in sentiment_data:
+                return {"error": sentiment_data["error"]}
             
             # Calculate sentiment score
             sentiment_score = self.calculate_sentiment_score(sentiment_data)

@@ -3,9 +3,9 @@ import pandas as pd
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from gold_analyzer.data.fetcher import GoldDataFetcher
-from gold_analyzer.models.predictor import GoldPricePredictor
-from gold_analyzer.visualization.plots import GoldVisualizer
+from data.fetcher import GoldDataFetcher
+from models.predictor import GoldPricePredictor
+from visualization.plots import GoldVisualizer
 from sentiment.sentiment_analysis import SentimentAnalyzer, format_sentiment_for_dashboard
 
 # Load environment variables

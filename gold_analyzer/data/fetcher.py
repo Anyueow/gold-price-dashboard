@@ -1,4 +1,4 @@
-from alpha_vantage.timeseries import TimeSeries
+import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -8,32 +8,16 @@ import time
 import streamlit as st
 
 class GoldDataFetcher:
-    """Class to handle gold price data fetching from Alpha Vantage."""
+    """Class to handle gold price data fetching from Yahoo Finance."""
     
     def __init__(self):
         self.symbol = "GLD"  # SPDR Gold Trust ETF
         self.cache_dir = os.path.join(os.path.dirname(__file__), "cache")
         os.makedirs(self.cache_dir, exist_ok=True)
-        self.last_api_call = 0
-        self.api_delay = 12  # Alpha Vantage free tier: 5 calls/minute
-        
-        # Get API key from Streamlit secrets
-        self.api_key = st.secrets["ALPHA_VANTAGE_API_KEY"]
-        if not self.api_key:
-            raise ValueError("ALPHA_VANTAGE_API_KEY not found in Streamlit secrets")
-        self.ts = TimeSeries(key=self.api_key, output_format='pandas')
-    
-    def _wait_for_rate_limit(self):
-        """Implement rate limiting for Alpha Vantage API calls."""
-        current_time = time.time()
-        time_since_last_call = current_time - self.last_api_call
-        if time_since_last_call < self.api_delay:
-            time.sleep(self.api_delay - time_since_last_call)
-        self.last_api_call = time.time()
     
     def fetch_live_data(self, days: int = 365) -> Optional[pd.DataFrame]:
         """
-        Fetch live gold price data from Alpha Vantage.
+        Fetch live gold price data from Yahoo Finance.
         
         Args:
             days: Number of days of historical data to fetch
@@ -42,20 +26,24 @@ class GoldDataFetcher:
             DataFrame with gold price data or None if fetch fails
         """
         try:
-            self._wait_for_rate_limit()
-            data, meta_data = self.ts.get_daily(symbol=self.symbol, outputsize='full')
+            # Calculate start date
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            # Fetch data from Yahoo Finance
+            ticker = yf.Ticker(self.symbol)
+            data = ticker.history(start=start_date, end=end_date)
             
             # Rename columns to match expected format
-            data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+            data.columns = ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume', 'Dividends', 'Stock Splits']
             
-            # Sort by date and get last n days
-            data = data.sort_index()
-            data = data.tail(days)
+            # Keep only the columns we need
+            data = data[['Open', 'High', 'Low', 'Close', 'Volume']]
             
             return data
             
         except Exception as e:
-            print(f"Failed to fetch data from Alpha Vantage: {str(e)}")
+            print(f"Failed to fetch data from Yahoo Finance: {str(e)}")
             return None
     
     def generate_sample_data(self, days: int = 365) -> pd.DataFrame:
